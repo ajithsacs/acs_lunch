@@ -1,0 +1,66 @@
+import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:intl/intl.dart';
+import '../../appconstant/endpoints.dart';
+import '../../utils/httphelper.dart';
+
+// OfflineHelper offlineHelper = OfflineHelper();
+HttpController httpHelper =HttpController();
+
+class LunchBookingRepository {
+  bookLunch(Map data) async {
+    return await httpHelper.request(HttpMethods.post,
+        endPoint: Endpoints.lunchBookingUrl,
+        authenticationRequired: true,
+        data: json.encode(data));
+  }
+
+  cancelLunch() async {
+    SharedPreferences mySharedPreferences;
+    mySharedPreferences = await SharedPreferences.getInstance();
+    String cancelid = mySharedPreferences.getInt('userid').toString();
+    var cancelidUrl = Endpoints.lunchCancellingUrl + cancelid + ".json";
+    return await httpHelper.request(HttpMethods.delete,
+        endPoint: cancelidUrl, authenticationRequired: true);
+  }
+
+  getMenuItems() async {
+    return await httpHelper.request(HttpMethods.get,
+        endPoint: Endpoints.menuDisplayUrl,
+        authenticationRequired: true,
+        isAdmin: true);
+  }
+
+  lunchBookedMonthWiseEntries() async {
+    SharedPreferences mySharedPreferences;
+    mySharedPreferences = await SharedPreferences.getInstance();
+    String loginUserIdValue =
+        mySharedPreferences.getInt('loginTokenId').toString();
+    var dateFormatter = DateFormat("yyyy-MM-dd");
+    final currentDate = DateTime.now();
+    var prevMonth = new DateTime(currentDate.year, currentDate.month - 1, 1);
+    String requestFormat =
+        "><${dateFormatter.format(prevMonth)}|${dateFormatter.format(currentDate)}";
+    var fetchUrl = Endpoints.checkBookingUrl +
+        requestFormat +
+        "&user_id=" +
+        loginUserIdValue;
+    // print(fetchUrl);
+    return await httpHelper.request(HttpMethods.get,
+        endPoint: fetchUrl, authenticationRequired: true);
+  }
+
+  checkLunchBooked() async {
+    SharedPreferences mySharedPreferences;
+    mySharedPreferences = await SharedPreferences.getInstance();
+    var now = new DateTime.now();
+    String loginUserIdValue =
+        mySharedPreferences.getInt('loginTokenId').toString();
+    var checkurl = Endpoints.checkBookingUrl +
+        new DateFormat("yyyy-MM-dd").format(now) +
+        "&user_id=" +
+        loginUserIdValue;
+    return await httpHelper.request(HttpMethods.get,
+        endPoint: checkurl, authenticationRequired: true);
+  }
+}
